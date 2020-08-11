@@ -13,7 +13,7 @@ extern "C" {
 // the members of the TokenKind enumeration (i.e., so they
 // can be distinguished from terminal symbols)
 enum Nonterminal {
-	NODE_U,   // "Unit", sequence of expressions
+	NODE_U = 1000,   // "Unit", sequence of expressions
 	NODE_E,   // "Expression"
 };
 
@@ -23,6 +23,8 @@ struct Parser *parser_create(struct Lexer *lexer_to_adopt);
 void parser_destroy(struct Parser *parser);
 
 struct Node *parser_parse(struct Parser *parser);
+
+void parser_print_parse_tree(struct Node *root);
 
 #ifdef __cplusplus
 }

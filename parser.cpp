@@ -1,4 +1,5 @@
 #include "util.h"
+#include "treeprint.h"
 #include "parser.h"
 
 ////////////////////////////////////////////////////////////////////////
@@ -137,6 +138,38 @@ struct Node *Parser::parse_E() {
 	return e;
 }
 
+// This function translates token and parse node tags into strings
+// for parse tree printing
+const char *pfxcalc_stringify_node_tag(int tag) {
+	switch (tag) {
+	// terminal symbols:
+	case TOK_IDENTIFIER:
+		return "IDENTIFIER";
+	case TOK_INTEGER_LITERAL:
+		return "INTEGER_LITERAL";
+	case TOK_PLUS:
+		return "PLUS";
+	case TOK_MINUS:
+		return "MINUS";
+	case TOK_TIMES:
+		return "TIMES";
+	case TOK_DIVIDE:
+		return "DIVIDE";
+	case TOK_SEMICOLON:
+		return "SEMICOLON";
+
+	// nonterminal symbols:
+	case NODE_U:
+		return "U";
+	case NODE_E:
+		return "E";
+
+	default:
+		err_fatal("Unknown node tag: %d\n", tag);
+		return "<<UNKNOWN>>";
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////
 // Parser API functions
 ////////////////////////////////////////////////////////////////////////
@@ -151,4 +184,8 @@ void parser_destroy(struct Parser *parser) {
 
 struct Node *parser_parse(struct Parser *parser) {
 	return parser->parse();
+}
+
+void parser_print_parse_tree(struct Node *root) {
+	treeprint(root, pfxcalc_stringify_node_tag);
 }
