@@ -21,10 +21,10 @@ enum TokenKind {
 struct Token {
 	enum TokenKind kind;
 	char *lexeme;
-	int line_num;
+	int line, col;
 };
 
-struct Token *token_create(enum TokenKind kind, char *lexeme_to_adopt);
+struct Token *token_create(enum TokenKind kind, char *lexeme_to_adopt, int line, int col);
 void token_destroy(struct Token *tok);
 
 #ifdef __cplusplus

@@ -16,6 +16,9 @@ void lexer_destroy(struct Lexer *lexer);
 struct Token *lexer_next(struct Lexer *lexer);
 struct Token *lexer_peek(struct Lexer *lexer);
 
+int lexer_get_line(struct Lexer *lexer);
+int lexer_get_col(struct Lexer *lexer);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
