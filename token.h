@@ -12,6 +12,7 @@ enum TokenKind {
 	TOK_MINUS,
 	TOK_TIMES,
 	TOK_DIVIDE,
+	TOK_SEMICOLON,
 
 	// special token kind for whitespace: the lexer should not
 	// actually return a token of this kind

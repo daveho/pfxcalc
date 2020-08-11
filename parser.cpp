@@ -34,6 +34,9 @@ private:
 	// Peek ahead to see the next token, wrapping it in a Node
 	struct Node *peek();
 
+	// Consume a specific token, wrapping it in a Node
+	struct Node *expect(enum TokenKind tok_kind);
+
 	// Parse functions for nonterminal grammar symbols
 	struct Node *parse_U();
 	struct Node *parse_E();
@@ -46,7 +49,8 @@ Parser::~Parser() {
 }
 
 struct Node *Parser::parse() {
-	return parse_E();
+	// U is the start symbol
+	return parse_U();
 }
 
 struct Node *Parser::next() {
@@ -74,7 +78,32 @@ struct Node *Parser::peek() {
 	return m_next;
 }
 
+struct Node *Parser::expect(enum TokenKind tok_kind) {
+	struct Node *next_terminal = next();
+	if (node_get_tag(next_terminal) != tok_kind) {
+		err_fatal("Line %d: unexpected token\n", next_terminal->line);
+	}
+	return next_terminal;
+}
+
 struct Node *Parser::parse_U() {
+	struct Node *u = node_build0(NODE_U);
+
+	// U -> ^ E ;
+	// U -> ^ E ; U
+	struct Node *e = parse_E();
+	node_add_kid(u, e);
+	node_add_kid(u, expect(TOK_SEMICOLON));
+
+	// U -> E ;
+	// U -> E ; ^ U
+
+	// If there is more input, then the sequence of expressions continues
+	if (peek()) {
+		node_add_kid(u, parse_U());
+	}
+
+	return u;
 }
 
 struct Node *Parser::parse_E() {
@@ -104,6 +133,8 @@ struct Node *Parser::parse_E() {
 	} else {
 		err_fatal("Line %d: Illegal expression (at '%s')\n", next_terminal->line, node_get_str(next_terminal));
 	}
+
+	return e;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -111,10 +142,13 @@ struct Node *Parser::parse_E() {
 ////////////////////////////////////////////////////////////////////////
 
 struct Parser *parser_create(struct Lexer *lexer_to_adopt) {
+	return new Parser(lexer_to_adopt);
 }
 
 void parser_destroy(struct Parser *parser) {
+	delete parser;
 }
 
 struct Node *parser_parse(struct Parser *parser) {
+	return parser->parse();
 }

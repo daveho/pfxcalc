@@ -111,6 +111,8 @@ struct Token *Lexer::read_token() {
 			return token_create(TOK_TIMES, xstrdup(lexeme.c_str()), line, col);
 		case '/':
 			return token_create(TOK_DIVIDE, xstrdup(lexeme.c_str()), line, col);
+		case ';':
+			return token_create(TOK_SEMICOLON, xstrdup(lexeme.c_str()), line, col);
 		default:
 			err_fatal("Line %d: unrecognized character '%c'\n", line, c);
 			return nullptr;
