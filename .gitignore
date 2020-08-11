@@ -1,0 +1,4 @@
+*.swp
+/*.o
+/pfxcalc
+/depend.mak
