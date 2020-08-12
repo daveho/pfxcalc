@@ -1,7 +1,8 @@
 #include <cctype>
 #include <string>
-#include "util.h"
+#include "cpputil.h"
 #include "token.h"
+#include "error.h"
 #include "lexer.h"
 
 ////////////////////////////////////////////////////////////////////////
@@ -89,6 +90,7 @@ int Lexer::read() {
 // that the current token has ended and the next one has begun.
 void Lexer::unread(int c) {
 	ungetc(c, m_in);
+	m_col--;
 }
 
 void Lexer::fill() {
@@ -125,18 +127,28 @@ struct Node *Lexer::read_token() {
 	} else {
 		switch (c) {
 		case '+':
-			return token_create(TOK_PLUS, xstrdup(lexeme.c_str()), line, col);
+			return token_create(TOK_PLUS, lexeme, line, col);
 		case '-':
-			return token_create(TOK_MINUS, xstrdup(lexeme.c_str()), line, col);
+			return token_create(TOK_MINUS, lexeme, line, col);
 		case '*':
-			return token_create(TOK_TIMES, xstrdup(lexeme.c_str()), line, col);
+			return token_create(TOK_TIMES, lexeme, line, col);
 		case '/':
-			return token_create(TOK_DIVIDE, xstrdup(lexeme.c_str()), line, col);
+			return token_create(TOK_DIVIDE, lexeme, line, col);
 		case ';':
-			return token_create(TOK_SEMICOLON, xstrdup(lexeme.c_str()), line, col);
+			return token_create(TOK_SEMICOLON, lexeme, line, col);
+		case '=':
+			return token_create(TOK_ASSIGN, lexeme, line, col);
 		default:
-			err_fatal("Line %d: unrecognized character '%c'\n", line, c);
-			return nullptr;
+			{
+				struct SourceInfo pos = {
+					.filename = m_filename.c_str(),
+					.line = line,
+					.col = col,
+				};
+				std::string errmsg = ::format("Unrecognized character '%c'", c).c_str();
+				error_at_pos(pos, errmsg.c_str());
+				return nullptr;
+			}
 		}
 	} 
 }
@@ -155,7 +167,7 @@ struct Node *Lexer::read_continued_token(enum TokenKind kind, const std::string 
 			if (c >= 0) {
 				unread(c);
 			}
-			return token_create(kind, xstrdup(lexeme.c_str()), line, col);
+			return token_create(kind, lexeme, line, col);
 		}
 	}
 }

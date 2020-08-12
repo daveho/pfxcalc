@@ -15,6 +15,7 @@ enum TokenKind {
 	TOK_MINUS,
 	TOK_TIMES,
 	TOK_DIVIDE,
+	TOK_ASSIGN,
 	TOK_SEMICOLON,
 };
 
