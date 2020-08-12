@@ -1,6 +1,7 @@
 #include <stdio.h>
-#include "parser.h"
 #include "lexer.h"
+#include "parser.h"
+#include "interp.h"
 
 int main(void) {
 	struct Lexer *lexer = lexer_create(stdin, "<stdin>");
@@ -21,6 +22,11 @@ int main(void) {
 	struct Parser *parser = parser_create(lexer);
 	struct Node *root = parser_parse(parser);
 	parser_print_parse_tree(root);
+
+	struct Interpreter *interp = interp_create(root);
+
+	long result = interp_exec(interp);
+	printf("Result: %ld\n", result);
 
 	return 0;
 }
