@@ -6,11 +6,14 @@ int main(void) {
 
 	int done = 0;
 	while (!done) {
-		struct Token *tok = lexer_next(lexer);
+		struct Node *tok = lexer_next(lexer);
 		if (!tok) {
 			done = 1;
 		} else {
-			printf("%d:%s\n", tok->kind, tok->lexeme);
+			int kind = node_get_tag(tok);
+			const char *lexeme = node_get_str(tok);
+			printf("%d:%s\n", kind, lexeme);
+			node_destroy(tok);
 		}
 	}
 

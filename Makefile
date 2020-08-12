@@ -1,4 +1,4 @@
-C_SRCS = token.c main.c util.c node.c
+C_SRCS = main.c util.c node.c
 C_OBJS = $(C_SRCS:%.c=%.o)
 
 CXX_SRCS = lexer.cpp

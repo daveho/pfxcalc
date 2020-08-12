@@ -2,7 +2,7 @@
 #define LEXER_H
 
 #include <stdio.h>
-#include "token.h"
+#include "node.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -13,8 +13,8 @@ struct Lexer;
 struct Lexer *lexer_create(FILE *in);
 void lexer_destroy(struct Lexer *lexer);
 
-struct Token *lexer_next(struct Lexer *lexer);
-struct Token *lexer_peek(struct Lexer *lexer);
+struct Node *lexer_next(struct Lexer *lexer);
+struct Node *lexer_peek(struct Lexer *lexer);
 
 int lexer_get_line(struct Lexer *lexer);
 int lexer_get_col(struct Lexer *lexer);

@@ -1,6 +1,7 @@
 #include <cctype>
 #include <string>
 #include "util.h"
+#include "token.h"
 #include "lexer.h"
 
 ////////////////////////////////////////////////////////////////////////
@@ -10,7 +11,7 @@
 struct Lexer {
 private:
 	FILE *m_in;
-	struct Token *m_next;
+	struct Node *m_next;
 	int m_line, m_col;
 	bool m_eof;
 
@@ -18,8 +19,8 @@ public:
 	Lexer(FILE *in);
 	~Lexer();
 
-	struct Token *next();
-	struct Token *peek();
+	struct Node *next();
+	struct Node *peek();
 
 	int get_line() const { return m_line; }
 	int get_col() const { return m_col; }
@@ -28,8 +29,9 @@ private:
 	int read();
 	void unread(int c);
 	void fill();
-	struct Token *read_token();
-	struct Token *read_continued_token(enum TokenKind kind, const std::string &lexeme_start, int line, int col, int (*pred)(int));
+	struct Node *read_token();
+	struct Node *read_continued_token(enum TokenKind kind, const std::string &lexeme_start, int line, int col, int (*pred)(int));
+	static struct Node *token_create(enum TokenKind kind, const std::string &lexeme, int line, int col);
 };
 
 Lexer::Lexer(FILE *in) : m_in(in), m_next(nullptr), m_line(1), m_col(1), m_eof(false) {
@@ -38,14 +40,14 @@ Lexer::Lexer(FILE *in) : m_in(in), m_next(nullptr), m_line(1), m_col(1), m_eof(f
 Lexer::~Lexer() {
 }
 
-struct Token *Lexer::next() {
+struct Node *Lexer::next() {
 	fill();
-	Token *tok = m_next;
+	Node *tok = m_next;
 	m_next = nullptr;
 	return tok;
 }
 
-struct Token *Lexer::peek() {
+struct Node *Lexer::peek() {
 	fill();
 	return m_next;
 }
@@ -76,7 +78,7 @@ void Lexer::fill() {
 	}
 }
 
-struct Token *Lexer::read_token() {
+struct Node *Lexer::read_token() {
 	int c, line = -1, col = -1;
 
 	// skip whitespace characters until a non-whitespace character is read
@@ -123,7 +125,7 @@ struct Token *Lexer::read_token() {
 // Read the continuation of a (possibly) multi-character token, such as
 // an identifier or integer literal.  pred is a pointer to a predicate
 // function to determine which characters are valid continuations.
-struct Token *Lexer::read_continued_token(enum TokenKind kind, const std::string &lexeme_start, int line, int col, int (*pred)(int)) {
+struct Node *Lexer::read_continued_token(enum TokenKind kind, const std::string &lexeme_start, int line, int col, int (*pred)(int)) {
 	std::string lexeme(lexeme_start);
 	for (;;) {
 		int c = read();
@@ -139,6 +141,18 @@ struct Token *Lexer::read_continued_token(enum TokenKind kind, const std::string
 	}
 }
 
+// Helper function to create a Node object to represent a token.
+struct Node *Lexer::token_create(enum TokenKind kind, const std::string &lexeme, int line, int col) {
+	struct Node *token = node_alloc_str_copy(kind, lexeme.c_str());
+	struct SourceInfo source_info = {
+		.filename = "<unknown>",
+		.line = line,
+		.col = col,
+	};
+	node_set_source_info(token, source_info);
+	return token;
+}
+
 ////////////////////////////////////////////////////////////////////////
 // Lexer API functions
 ////////////////////////////////////////////////////////////////////////
@@ -151,11 +165,11 @@ void lexer_destroy(struct Lexer *lexer) {
 	delete lexer;
 }
 
-struct Token *lexer_next(struct Lexer *lexer) {
+struct Node *lexer_next(struct Lexer *lexer) {
 	return lexer->next();
 }
 
-struct Token *lexer_peek(struct Lexer *lexer) {
+struct Node *lexer_peek(struct Lexer *lexer) {
 	return lexer->peek();
 }
 
