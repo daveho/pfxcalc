@@ -6,20 +6,41 @@
 #include "util.h"
 #include "node.h"
 
+#define DEFAULT_INITIAL_CAPACITY 2
+
 #define DEBUG_PRINT(args...)
 //#define DEBUG_PRINT(args...) printf(args)
 
-struct Node *node_alloc(int tag, int initial_capacity) {
+struct Node {
+	// the tag is the node type (for parse trees, the grammar symbol)
+	int tag;
+	// dynamic array of pointers to child nodes
+	struct Node **kids;
+	// how many children there are
+	int num_kids;
+	// total capacity of kids array
+	int capacity;
+
+	// payload data
+	char *str;
+	long ival;
+
+	// information about source file and location
+	struct SourceInfo source_info;
+};
+
+struct Node *node_alloc(int tag) {
 	struct Node *n = malloc(sizeof(struct Node));
-	n->kids = malloc(sizeof(struct Node *) * initial_capacity);
+	n->kids = xmalloc(sizeof(struct Node *) * DEFAULT_INITIAL_CAPACITY);
 	n->num_kids = 0;
-	n->capacity = initial_capacity;
+	n->capacity = DEFAULT_INITIAL_CAPACITY;
 	n->str = NULL;
 	n->ival = 0L;
 	n->tag = tag;
 	// Node starts out with unknown source info
-	n->srcfile = NULL;
-	n->line = n->col = 0;
+	n->source_info.filename = "<unknown file>";
+	n->source_info.line = -1;
+	n->source_info.col = -1;
 	return n;
 }
 
@@ -29,13 +50,13 @@ struct Node *node_alloc_str_copy(int tag, const char *str_to_copy) {
 
 struct Node *node_alloc_str_adopt(int tag, char *str_to_adopt) {
 	DEBUG_PRINT("Token: %d:%s\n", tag, str_to_adopt);
-	struct Node *n = node_alloc(tag, 1);
+	struct Node *n = node_alloc(tag);
 	n->str = str_to_adopt;
 	return n;
 }
 
 struct Node *node_alloc_ival(int tag, long ival) {
-	struct Node *n = node_alloc(tag, 1);
+	struct Node *n = node_alloc(tag);
 	n->ival = ival;
 	return n;
 }
@@ -100,7 +121,7 @@ struct Node *node_build8(int tag,
 struct Node *node_buildn(int tag, ...) {
 	va_list args;
 	va_start(args, tag);
-	struct Node *n = node_alloc(tag, 1);
+	struct Node *n = node_alloc(tag);
 	int done = 0;
 	while (!done) {
 		struct Node *child = (struct Node *) va_arg(args, struct Node *);
@@ -163,10 +184,8 @@ int node_first_kid_has_tag(struct Node *n, int tag) {
 	return n->num_kids > 0 && n->kids[0]->tag == tag;
 }
 
-void node_set_source_info(struct Node *n, const char *srcfile, int line, int col) {
-	n->srcfile = srcfile;
-	n->line = line;
-	n->col = col;
+void node_set_source_info(struct Node *n, struct SourceInfo source_info) {
+	n->source_info = source_info;
 }
 
 const char *node_get_str(struct Node *n) {
