@@ -90,6 +90,11 @@ struct Node *Parser::parse_E() {
 		// E -> <int_literal> ^
 		// E -> <identifier> ^
 		node_add_kid(e, next_terminal);
+	} else if (tag == TOK_ASSIGN) {
+		// E -> = ^ <identifier> E
+		node_add_kid(e, next_terminal);
+		node_add_kid(e, expect(TOK_IDENTIFIER));
+		node_add_kid(e, parse_E());
 	} else if (tag == TOK_PLUS || tag == TOK_MINUS || tag == TOK_TIMES || tag == TOK_DIVIDE) {
 		// E -> + ^ E E
 		// E -> - ^ E E
@@ -134,6 +139,8 @@ const char *pfxcalc_stringify_node_tag(int tag) {
 		return "TIMES";
 	case TOK_DIVIDE:
 		return "DIVIDE";
+	case TOK_ASSIGN:
+		return "ASSIGN";
 	case TOK_SEMICOLON:
 		return "SEMICOLON";
 
