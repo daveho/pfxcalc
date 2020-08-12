@@ -12,18 +12,18 @@ struct Lexer {
 private:
 	FILE *m_in;
 	struct Node *m_next;
+	std::string m_filename;
 	int m_line, m_col;
 	bool m_eof;
 
 public:
-	Lexer(FILE *in);
+	Lexer(FILE *in, const std::string &filename);
 	~Lexer();
 
 	struct Node *next();
 	struct Node *peek();
 
-	int get_line() const { return m_line; }
-	int get_col() const { return m_col; }
+	struct SourceInfo get_current_pos() const;
 
 private:
 	int read();
@@ -31,10 +31,16 @@ private:
 	void fill();
 	struct Node *read_token();
 	struct Node *read_continued_token(enum TokenKind kind, const std::string &lexeme_start, int line, int col, int (*pred)(int));
-	static struct Node *token_create(enum TokenKind kind, const std::string &lexeme, int line, int col);
+	struct Node *token_create(enum TokenKind kind, const std::string &lexeme, int line, int col);
 };
 
-Lexer::Lexer(FILE *in) : m_in(in), m_next(nullptr), m_line(1), m_col(1), m_eof(false) {
+Lexer::Lexer(FILE *in, const std::string &filename)
+	: m_in(in)
+	, m_next(nullptr)
+	, m_filename(filename)
+	, m_line(1)
+	, m_col(1)
+	, m_eof(false) {
 }
 
 Lexer::~Lexer() {
@@ -52,6 +58,17 @@ struct Node *Lexer::peek() {
 	return m_next;
 }
 
+struct SourceInfo Lexer::get_current_pos() const {
+	SourceInfo source_pos = {
+		.filename = m_filename.c_str(),
+		.line = m_line,
+		.col = m_col,
+	};
+	return source_pos;
+}
+
+// Read the next character of input, returning -1 (and setting m_eof to true)
+// if the end of input has been reached.
 int Lexer::read() {
 	if (m_eof) {
 		return -1;
@@ -68,6 +85,8 @@ int Lexer::read() {
 	return c;
 }
 
+// "Unread" a character.  Useful for when reading a character indicates
+// that the current token has ended and the next one has begun.
 void Lexer::unread(int c) {
 	ungetc(c, m_in);
 }
@@ -145,7 +164,7 @@ struct Node *Lexer::read_continued_token(enum TokenKind kind, const std::string 
 struct Node *Lexer::token_create(enum TokenKind kind, const std::string &lexeme, int line, int col) {
 	struct Node *token = node_alloc_str_copy(kind, lexeme.c_str());
 	struct SourceInfo source_info = {
-		.filename = "<unknown>",
+		.filename = m_filename.c_str(),
 		.line = line,
 		.col = col,
 	};
@@ -157,8 +176,8 @@ struct Node *Lexer::token_create(enum TokenKind kind, const std::string &lexeme,
 // Lexer API functions
 ////////////////////////////////////////////////////////////////////////
 
-struct Lexer *lexer_create(FILE *in) {
-	return new Lexer(in);
+struct Lexer *lexer_create(FILE *in, const char *filename) {
+	return new Lexer(in, filename);
 }
 
 void lexer_destroy(struct Lexer *lexer) {
@@ -173,10 +192,6 @@ struct Node *lexer_peek(struct Lexer *lexer) {
 	return lexer->peek();
 }
 
-int lexer_get_line(struct Lexer *lexer) {
-	return lexer->get_line();
-}
-
-int lexer_get_col(struct Lexer *lexer) {
-	return lexer->get_col();
+struct SourceInfo lexer_get_current_pos(struct Lexer *lexer) {
+	return lexer->get_current_pos();
 }

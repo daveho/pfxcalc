@@ -3,7 +3,7 @@
 #include "lexer.h"
 
 int main(void) {
-	struct Lexer *lexer = lexer_create(stdin);
+	struct Lexer *lexer = lexer_create(stdin, "<stdin>");
 #if 0
 	int done = 0;
 	while (!done) {

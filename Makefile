@@ -1,7 +1,7 @@
 C_SRCS = main.c util.c node.c treeprint.c
 C_OBJS = $(C_SRCS:%.c=%.o)
 
-CXX_SRCS = lexer.cpp parser.cpp
+CXX_SRCS = cpputil.cpp lexer.cpp parser.cpp
 CXX_OBJS = $(CXX_SRCS:%.cpp=%.o)
 
 CC = gcc

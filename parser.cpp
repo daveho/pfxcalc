@@ -1,4 +1,6 @@
+#include <string>
 #include "util.h"
+#include "cpputil.h"
 #include "treeprint.h"
 #include "token.h"
 #include "parser.h"
@@ -30,12 +32,21 @@ public:
 	struct Node *parse();
 
 private:
-	// Consume a specific token, wrapping it in a Node
-	struct Node *expect(enum TokenKind tok_kind);
-
 	// Parse functions for nonterminal grammar symbols
 	struct Node *parse_U();
 	struct Node *parse_E();
+
+	// Consume a specific token, wrapping it in a Node
+	struct Node *expect(enum TokenKind tok_kind);
+
+	// Report an error at current lexer position
+	void error_at_current_pos(const std::string &msg);
+
+	// Report an error at the source position indicated by given Node
+	void error_at(struct Node *node, const std::string &msg);
+
+	// Report an error at indicated source position
+	void error_at(const SourceInfo &source_pos, const std::string &msg);
 };
 
 Parser::Parser(Lexer *lexer_to_adopt) : m_lexer(lexer_to_adopt), m_next(nullptr) {
@@ -47,15 +58,6 @@ Parser::~Parser() {
 struct Node *Parser::parse() {
 	// U is the start symbol
 	return parse_U();
-}
-
-struct Node *Parser::expect(enum TokenKind tok_kind) {
-	struct Node *next_terminal = lexer_next(m_lexer);
-	if (node_get_tag(next_terminal) != tok_kind) {
-		struct SourceInfo source_info = node_get_source_info(next_terminal);
-		err_fatal("Line %d: unexpected token\n", source_info.line);
-	}
-	return next_terminal;
 }
 
 struct Node *Parser::parse_U() {
@@ -82,7 +84,7 @@ struct Node *Parser::parse_E() {
 	// read the next terminal symbol
 	struct Node *next_terminal = lexer_next(m_lexer);
 	if (!next_terminal) {
-		err_fatal("Line %d: Parse error (missing expression)\n", lexer_get_line(m_lexer));
+		error_at_current_pos("Parser error (missing expression)");
 	}
 
 	struct Node *e = node_build0(NODE_E);
@@ -103,11 +105,19 @@ struct Node *Parser::parse_E() {
 		node_add_kid(e, parse_E()); // parse first operand
 		node_add_kid(e, parse_E()); // parse second operand
 	} else {
-		struct SourceInfo source_info = node_get_source_info(next_terminal);
-		err_fatal("Line %d: Illegal expression (at '%s')\n", source_info.line, node_get_str(next_terminal));
+		std::string errmsg = ::format("Illegal expression (at '%s')", node_get_str(next_terminal));
+		error_at(next_terminal, errmsg);
 	}
 
 	return e;
+}
+
+struct Node *Parser::expect(enum TokenKind tok_kind) {
+	struct Node *next_terminal = lexer_next(m_lexer);
+	if (node_get_tag(next_terminal) != tok_kind) {
+		error_at(next_terminal, "Unexpected token");
+	}
+	return next_terminal;
 }
 
 // This function translates token and parse node tags into strings
@@ -140,6 +150,20 @@ const char *pfxcalc_stringify_node_tag(int tag) {
 		err_fatal("Unknown node tag: %d\n", tag);
 		return "<<UNKNOWN>>";
 	}
+}
+
+void Parser::error_at_current_pos(const std::string &msg) {
+	struct SourceInfo current_pos = lexer_get_current_pos(m_lexer);
+	error_at(current_pos, msg);
+}
+
+void Parser::error_at(struct Node *node, const std::string &msg) {
+	struct SourceInfo node_pos = node_get_source_info(node);
+	error_at(node_pos, msg);
+}
+
+void Parser::error_at(const SourceInfo &source_pos, const std::string &msg) {
+	err_fatal("%s:%d:%d: Error: %s\n", source_pos.filename, source_pos.line, source_pos.col, msg.c_str());
 }
 
 ////////////////////////////////////////////////////////////////////////

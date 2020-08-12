@@ -10,14 +10,12 @@ extern "C" {
 
 struct Lexer;
 
-struct Lexer *lexer_create(FILE *in);
+struct Lexer *lexer_create(FILE *in, const char *filename);
 void lexer_destroy(struct Lexer *lexer);
 
 struct Node *lexer_next(struct Lexer *lexer);
 struct Node *lexer_peek(struct Lexer *lexer);
-
-int lexer_get_line(struct Lexer *lexer);
-int lexer_get_col(struct Lexer *lexer);
+struct SourceInfo lexer_get_current_pos(struct Lexer *lexer);
 
 #ifdef __cplusplus
 }
