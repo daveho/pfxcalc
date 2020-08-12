@@ -30,12 +30,6 @@ public:
 	struct Node *parse();
 
 private:
-	// Consume next token, wrapping it in a Node
-	struct Node *next();
-
-	// Peek ahead to see the next token, wrapping it in a Node
-	struct Node *peek();
-
 	// Consume a specific token, wrapping it in a Node
 	struct Node *expect(enum TokenKind tok_kind);
 
@@ -55,25 +49,8 @@ struct Node *Parser::parse() {
 	return parse_U();
 }
 
-struct Node *Parser::next() {
-	peek();
-	if (!m_next) {
-		err_fatal("Line %d: unexpected end of input\n", lexer_get_line(m_lexer));
-	}
-	struct Node *n = m_next;
-	m_next = nullptr;
-	return n;
-}
-
-struct Node *Parser::peek() {
-	if (!m_next) {
-		m_next = lexer_next(m_lexer);
-	}
-	return m_next;
-}
-
 struct Node *Parser::expect(enum TokenKind tok_kind) {
-	struct Node *next_terminal = next();
+	struct Node *next_terminal = lexer_next(m_lexer);
 	if (node_get_tag(next_terminal) != tok_kind) {
 		struct SourceInfo source_info = node_get_source_info(next_terminal);
 		err_fatal("Line %d: unexpected token\n", source_info.line);
@@ -94,7 +71,7 @@ struct Node *Parser::parse_U() {
 	// U -> E ; ^ U
 
 	// If there is more input, then the sequence of expressions continues
-	if (peek()) {
+	if (lexer_peek(m_lexer)) {
 		node_add_kid(u, parse_U());
 	}
 
@@ -102,8 +79,8 @@ struct Node *Parser::parse_U() {
 }
 
 struct Node *Parser::parse_E() {
-	// read the next terminal symbol (wrapping it in a Node)
-	struct Node *next_terminal = next();
+	// read the next terminal symbol
+	struct Node *next_terminal = lexer_next(m_lexer);
 	if (!next_terminal) {
 		err_fatal("Line %d: Parse error (missing expression)\n", lexer_get_line(m_lexer));
 	}
