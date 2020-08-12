@@ -188,6 +188,10 @@ void node_set_source_info(struct Node *n, struct SourceInfo source_info) {
 	n->source_info = source_info;
 }
 
+struct SourceInfo node_get_source_info(struct Node *n) {
+	return n->source_info;
+}
+
 const char *node_get_str(struct Node *n) {
 	return n->str;
 }

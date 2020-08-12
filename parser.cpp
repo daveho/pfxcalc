@@ -1,5 +1,6 @@
 #include "util.h"
 #include "treeprint.h"
+#include "token.h"
 #include "parser.h"
 
 ////////////////////////////////////////////////////////////////////////
@@ -43,7 +44,7 @@ private:
 	struct Node *parse_E();
 };
 
-Parser::Parser(Lexer *lexer_to_adopt) {
+Parser::Parser(Lexer *lexer_to_adopt) : m_lexer(lexer_to_adopt), m_next(nullptr) {
 }
 
 Parser::~Parser() {
@@ -66,15 +67,7 @@ struct Node *Parser::next() {
 
 struct Node *Parser::peek() {
 	if (!m_next) {
-		// This is where we actually read a Token from the lexer
-		// and create a Node for it
-		struct Token *tok = lexer_next(m_lexer);
-		if (tok) {
-			struct Node *n = node_alloc_str_copy(tok->kind, tok->lexeme);
-			node_set_source_info(n, "<input>", tok->line, tok->col);
-			m_next = n;
-			token_destroy(tok);
-		}
+		m_next = lexer_next(m_lexer);
 	}
 	return m_next;
 }
@@ -82,7 +75,8 @@ struct Node *Parser::peek() {
 struct Node *Parser::expect(enum TokenKind tok_kind) {
 	struct Node *next_terminal = next();
 	if (node_get_tag(next_terminal) != tok_kind) {
-		err_fatal("Line %d: unexpected token\n", next_terminal->line);
+		struct SourceInfo source_info = node_get_source_info(next_terminal);
+		err_fatal("Line %d: unexpected token\n", source_info.line);
 	}
 	return next_terminal;
 }
@@ -132,7 +126,8 @@ struct Node *Parser::parse_E() {
 		node_add_kid(e, parse_E()); // parse first operand
 		node_add_kid(e, parse_E()); // parse second operand
 	} else {
-		err_fatal("Line %d: Illegal expression (at '%s')\n", next_terminal->line, node_get_str(next_terminal));
+		struct SourceInfo source_info = node_get_source_info(next_terminal);
+		err_fatal("Line %d: Illegal expression (at '%s')\n", source_info.line, node_get_str(next_terminal));
 	}
 
 	return e;

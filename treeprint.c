@@ -36,9 +36,13 @@ static void print_node(struct Node *n, struct TreePrintContext *ctx, const char 
 			}
 		}
 	}
-	printf("%s", node_tag_to_str_fn(n->tag));
-	if (n->str) {
-		printf("[%s]", n->str);
+
+	int tag = node_get_tag(n);
+	const char *str = node_get_str(n);
+
+	printf("%s", node_tag_to_str_fn(tag));
+	if (str) {
+		printf("[%s]", str);
 	}
 	printf("\n");
 	ctx->index[depth-1]++;
