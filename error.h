@@ -3,7 +3,7 @@
 
 #include "node.h"
 
-// Error reporting (for use by lexer, parser, semantic analyzed, etc...)
+// Error reporting (for use by lexer, parser, semantic analyzer, etc...)
 
 #ifdef __cplusplus
 extern "C" {
