@@ -13,8 +13,8 @@ extern "C" {
 // the members of the TokenKind enumeration (i.e., so they
 // can be distinguished from terminal symbols)
 enum Nonterminal {
-	NODE_U = 1000,   // "Unit", sequence of expressions
-	NODE_E,   // "Expression"
+  NODE_U = 1000,   // "Unit", sequence of expressions
+  NODE_E,   // "Expression"
 };
 
 struct Parser;

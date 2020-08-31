@@ -9,8 +9,8 @@ extern "C" {
 
 // Source information structure.
 struct SourceInfo {
-	const char *filename;
-	int line, col;
+  const char *filename;
+  int line, col;
 };
 
 struct Node;

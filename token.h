@@ -9,14 +9,14 @@ extern "C" {
 #endif // __cplusplus
 
 enum TokenKind {
-	TOK_IDENTIFIER,
-	TOK_INTEGER_LITERAL,
-	TOK_PLUS,
-	TOK_MINUS,
-	TOK_TIMES,
-	TOK_DIVIDE,
-	TOK_ASSIGN,
-	TOK_SEMICOLON,
+  TOK_IDENTIFIER,
+  TOK_INTEGER_LITERAL,
+  TOK_PLUS,
+  TOK_MINUS,
+  TOK_TIMES,
+  TOK_DIVIDE,
+  TOK_ASSIGN,
+  TOK_SEMICOLON,
 };
 
 #ifdef __cplusplus
