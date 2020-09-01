@@ -65,7 +65,7 @@ struct Node *Parser::parse_U() {
   node_add_kid(u, e);
   node_add_kid(u, expect(TOK_SEMICOLON));
 
-  // U -> E ;
+  // U -> E ; ^
   // U -> E ; ^ U
 
   // If there is more input, then the sequence of expressions continues
