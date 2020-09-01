@@ -145,7 +145,7 @@ struct Node *Lexer::read_token() {
           .line = line,
           .col = col,
         };
-        std::string errmsg = ::format("Unrecognized character '%c'", c).c_str();
+        std::string errmsg = cpputil::format("Unrecognized character '%c'", c).c_str();
         error_at_pos(pos, errmsg.c_str());
         return nullptr;
       }

@@ -7,7 +7,7 @@
 
 // See: https://codereview.stackexchange.com/questions/187183/create-a-c-string-using-printf-style-formatting
 
-std::string format(const char *fmt, ...)
+std::string cpputil::format(const char *fmt, ...)
 {
     char buf[256];
 

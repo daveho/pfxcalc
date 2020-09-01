@@ -74,7 +74,7 @@ long Interpreter::eval(struct Node *expr) {
       assert(tag == TOK_IDENTIFIER);
       std::map<std::string, long>::const_iterator i = m_vars.find(lexeme);
       if (i == m_vars.end()) {
-        std::string errmsg = ::format("Undefined variable '%s'", lexeme);
+        std::string errmsg = cpputil::format("Undefined variable '%s'", lexeme);
         error_on_node(expr, errmsg.c_str());
       }
       return i->second;

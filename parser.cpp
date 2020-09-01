@@ -104,7 +104,7 @@ struct Node *Parser::parse_E() {
     node_add_kid(e, parse_E()); // parse first operand
     node_add_kid(e, parse_E()); // parse second operand
   } else {
-    std::string errmsg = ::format("Illegal expression (at '%s')", node_get_str(next_terminal));
+    std::string errmsg = cpputil::format("Illegal expression (at '%s')", node_get_str(next_terminal));
     error_on_node(next_terminal, errmsg.c_str());
   }
 
@@ -114,7 +114,7 @@ struct Node *Parser::parse_E() {
 struct Node *Parser::expect(enum TokenKind tok_kind) {
   struct Node *next_terminal = lexer_next(m_lexer);
   if (node_get_tag(next_terminal) != tok_kind) {
-    std::string errmsg = ::format("Unexpected token '%s'", node_get_str(next_terminal));
+    std::string errmsg = cpputil::format("Unexpected token '%s'", node_get_str(next_terminal));
     error_on_node(next_terminal, errmsg.c_str());
   }
   return next_terminal;
