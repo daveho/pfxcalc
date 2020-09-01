@@ -59,13 +59,13 @@ int main(int argc, char **argv) {
   } else {
     struct Parser *parser = parser_create(lexer);
     struct Node *root = parser_parse(parser);
-  
+
     if (mode == PRINT_PARSE_TREE) {
-    parser_print_parse_tree(root);
+      parser_print_parse_tree(root);
     } else {
-    struct Interpreter *interp = interp_create(root);
-    long result = interp_exec(interp);
-    printf("Result: %ld\n", result);
+      struct Interpreter *interp = interp_create(root);
+      long result = interp_exec(interp);
+      printf("Result: %ld\n", result);
     }
   }
 
