@@ -113,6 +113,9 @@ struct Node *Parser::parse_E() {
 
 struct Node *Parser::expect(enum TokenKind tok_kind) {
   struct Node *next_terminal = lexer_next(m_lexer);
+  if (!next_terminal) {
+    error_at_current_pos("Unexpected end of input");
+  }
   if (node_get_tag(next_terminal) != tok_kind) {
     std::string errmsg = cpputil::format("Unexpected token '%s'", node_get_str(next_terminal));
     error_on_node(next_terminal, errmsg.c_str());
