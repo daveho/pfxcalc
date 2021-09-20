@@ -14,7 +14,7 @@ private:
   FILE *m_in;
   struct Node *m_next;
   std::string m_filename;
-  int m_line, m_col;
+  int m_line, m_col, m_prev_line, m_prev_col;
   bool m_eof;
 
 public:
@@ -41,6 +41,8 @@ Lexer::Lexer(FILE *in, const std::string &filename)
   , m_filename(filename)
   , m_line(1)
   , m_col(1)
+  , m_prev_line(1)
+  , m_prev_col(1)
   , m_eof(false) {
 }
 
@@ -78,9 +80,12 @@ int Lexer::read() {
   if (c < 0) {
     m_eof = true;
   } else if (c == '\n') {
+    m_prev_col = m_col;
+    m_prev_line = m_line;
     m_col = 1;
     m_line++;
   } else {
+    m_prev_col = m_col;
     m_col++;
   }
   return c;
@@ -90,7 +95,8 @@ int Lexer::read() {
 // that the current token has ended and the next one has begun.
 void Lexer::unread(int c) {
   ungetc(c, m_in);
-  m_col--;
+  m_col = m_prev_col;
+  m_line = m_prev_line;
 }
 
 void Lexer::fill() {
