@@ -1,7 +1,8 @@
-C_SRCS = main.c util.c node.c treeprint.c error.c
-C_OBJS = $(C_SRCS:%.c=%.o)
+#C_SRCS = main.c util.c node.c treeprint.c error.c
+#C_OBJS = $(C_SRCS:%.c=%.o)
 
-CXX_SRCS = cpputil.cpp lexer.cpp parser.cpp interp.cpp
+CXX_SRCS = main.cpp cpputil.cpp treeprint.cpp exceptions.cpp \
+	node_base.cpp node.cpp location.cpp lexer.cpp parser.cpp interp.cpp
 CXX_OBJS = $(CXX_SRCS:%.cpp=%.o)
 
 CC = gcc
@@ -25,7 +26,6 @@ clean :
 	rm -f *.o pfxcalc
 
 depend :
-	$(CC) $(CFLAFGS) -M $(C_SRCS) > depend.mak
 	$(CXX) $(CXXFLAGS) -M $(CXX_SRCS) >> depend.mak
 
 depend.mak :

@@ -1,32 +1,17 @@
 #include <string>
 #include <map>
 #include <cassert>
-#include "util.h"
 #include "cpputil.h"
 #include "token.h"
-#include "error.h"
+#include "exceptions.h"
 #include "interp.h"
 
 ////////////////////////////////////////////////////////////////////////
 // Interpreter implementation
 ////////////////////////////////////////////////////////////////////////
 
-struct Interpreter {
-private:
-  struct Node *m_tree;
-  std::map<std::string, long> m_vars;
-
-public:
-  Interpreter(struct Node *tree);
-  ~Interpreter();
-
-  long exec();
-
-private:
-  long eval(struct Node *expr);
-};
-
-Interpreter::Interpreter(struct Node *tree) : m_tree(tree) {
+Interpreter::Interpreter(Node *tree)
+  : m_tree(tree) {
 }
 
 Interpreter::~Interpreter() {
@@ -34,19 +19,19 @@ Interpreter::~Interpreter() {
 
 long Interpreter::exec() {
   long result = -1;
-  struct Node *unit = m_tree;
+  Node *unit = m_tree;
 
   while (unit) {
     // first child is (E)xpression
-    struct Node *expr = node_get_kid(unit, 0);
+    Node *expr = unit->get_kid(0);
 
     // evaluate the expression!
     result = eval(expr);
 
     // if there are more expressions, the next (U)nit
     // is the third child
-    if (node_get_num_kids(unit) == 3) {
-      unit = node_get_kid(unit, 2);
+    if (unit->get_num_kids() == 3) {
+      unit = unit->get_kid(2);
     } else {
       // no more expressions
       unit = nullptr;
@@ -56,34 +41,33 @@ long Interpreter::exec() {
   return result;
 }
 
-long Interpreter::eval(struct Node *expr) {
+long Interpreter::eval(Node *expr) {
   // the number of children and the first child's tag will determine
   // how to evaluate the expression
-  struct Node *first = node_get_kid(expr, 0);
-  int num_kids = node_get_num_kids(expr);
-  int tag = node_get_tag(first);
+  Node *first = expr->get_kid(0);
+  int num_kids = expr->get_num_kids();
+  int tag = first->get_tag();
 
   if (num_kids == 1) {
     // leaf expression (either an integer literal or identifier)
-    const char *lexeme = node_get_str(first);
+    std::string lexeme = first->get_str();
     if (tag == TOK_INTEGER_LITERAL) {
       // convert lexeme to an integer value
-      return strtol(lexeme, nullptr, 10);
+      return strtol(lexeme.c_str(), nullptr, 10);
     } else {
       // look up value of variable
       assert(tag == TOK_IDENTIFIER);
       std::map<std::string, long>::const_iterator i = m_vars.find(lexeme);
       if (i == m_vars.end()) {
-        std::string errmsg = cpputil::format("Undefined variable '%s'", lexeme);
-        error_on_node(expr, errmsg.c_str());
+        SemanticError::raise(expr->get_loc(), "Undefined variable '%s'", lexeme.c_str());
       }
       return i->second;
     }
   }
 
   // left and right operands follow
-  struct Node *left = node_get_kid(expr, 1);
-  struct Node *right = node_get_kid(expr, 2);
+  Node *left = expr->get_kid(1);
+  Node *right = expr->get_kid(2);
 
   // Do the evaluation
   switch (tag) {
@@ -101,7 +85,7 @@ long Interpreter::eval(struct Node *expr) {
     // the variable
     {
       // get the variable name
-      std::string varname = node_get_str(left);
+      std::string varname = left->get_str();
       // evaluate the expression producing the value to be assigned
       long rvalue = eval(right);
       // store the value
@@ -111,8 +95,7 @@ long Interpreter::eval(struct Node *expr) {
     }
 
   default:
-    err_fatal("Unknown operator: %d\n", tag);
-    return -1L;
+    RuntimeError::raise("Unknown operator: %d", tag);
   }
 }
 
@@ -120,14 +103,14 @@ long Interpreter::eval(struct Node *expr) {
 // Interpreter API functions
 ////////////////////////////////////////////////////////////////////////
 
-struct Interpreter *interp_create(struct Node *tree) {
+Interpreter *interp_create(struct Node *tree) {
   return new Interpreter(tree);
 }
 
-void interp_destroy(struct Interpreter *interp) {
+void interp_destroy(Interpreter *interp) {
   delete interp;
 }
 
-long interp_exec(struct Interpreter *interp) {
+long interp_exec(Interpreter *interp) {
   return interp->exec();
 }

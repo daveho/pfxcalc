@@ -1,9 +1,9 @@
 #include <string>
-#include "util.h"
+#include <memory>
 #include "cpputil.h"
 #include "treeprint.h"
 #include "token.h"
-#include "error.h"
+#include "exceptions.h"
 #include "parser.h"
 
 ////////////////////////////////////////////////////////////////////////
@@ -22,110 +22,97 @@
 // E -> / E E
 // E -> = identifier E
 
-struct Parser {
-private:
-  struct Lexer *m_lexer;
-  struct Node *m_next;
-
-public:
-  Parser(Lexer *lexer_to_adopt);
-  ~Parser();
-
-  struct Node *parse();
-
-private:
-  // Parse functions for nonterminal grammar symbols
-  struct Node *parse_U();
-  struct Node *parse_E();
-
-  // Consume a specific token, wrapping it in a Node
-  struct Node *expect(enum TokenKind tok_kind);
-
-  // Report an error at current lexer position
-  void error_at_current_pos(const std::string &msg);
-};
-
-Parser::Parser(Lexer *lexer_to_adopt) : m_lexer(lexer_to_adopt), m_next(nullptr) {
+Parser::Parser(Lexer *lexer_to_adopt)
+  : m_lexer(lexer_to_adopt)
+  , m_next(nullptr) {
 }
 
 Parser::~Parser() {
+  delete m_lexer;
 }
 
-struct Node *Parser::parse() {
+Node *Parser::parse() {
   // U is the start symbol
   return parse_U();
 }
 
-struct Node *Parser::parse_U() {
-  struct Node *u = node_build0(NODE_U);
+Node *Parser::parse_U() {
+  std::unique_ptr<Node> u(new Node(NODE_U));
 
   // U -> ^ E ;
   // U -> ^ E ; U
-  node_add_kid(u, parse_E());
-  node_add_kid(u, expect(TOK_SEMICOLON));
+  u->append_kid(parse_E());
+  u->append_kid(expect(TOK_SEMICOLON));
 
   // U -> E ; ^
   // U -> E ; ^ U
-  if (lexer_peek(m_lexer)) {
-    // there is more input, then the sequence of expressions continues
-    node_add_kid(u, parse_U());
+  if (m_lexer->peek() != nullptr) {
+    // there is more input, so the sequence of expressions continues
+    u->append_kid(parse_U());
   }
 
-  return u;
+  return u.release();
 }
 
-struct Node *Parser::parse_E() {
+Node *Parser::parse_E() {
   // read the next terminal symbol
-  struct Node *next_terminal = lexer_next(m_lexer);
-  if (!next_terminal) {
-    error_at_current_pos("Parser error (missing expression)");
-  }
+  Node *next_terminal = m_lexer->next();
 
-  struct Node *e = node_build0(NODE_E);
+  std::unique_ptr<Node> e(new Node(NODE_E));
 
-  int tag = node_get_tag(next_terminal);
+  int tag = next_terminal->get_tag();
   if (tag == TOK_INTEGER_LITERAL || tag == TOK_IDENTIFIER) {
     // E -> <int_literal> ^
     // E -> <identifier> ^
-    node_add_kid(e, next_terminal);
+    e->append_kid(next_terminal);
   } else if (tag == TOK_ASSIGN) {
     // E -> = ^ <identifier> E
-    node_add_kid(e, next_terminal);
-    node_add_kid(e, expect(TOK_IDENTIFIER));
-    node_add_kid(e, parse_E());
+    e->append_kid(next_terminal);
+    e->append_kid(expect(TOK_IDENTIFIER));
+    e->append_kid(parse_E());
   } else if (tag == TOK_PLUS || tag == TOK_MINUS || tag == TOK_TIMES || tag == TOK_DIVIDE) {
     // E -> + ^ E E
     // E -> - ^ E E
     // E -> * ^ E E
     // E -> / ^ E E
 
-    node_add_kid(e, next_terminal);
+    e->append_kid(next_terminal);
 
-    node_add_kid(e, parse_E()); // parse first operand
-    node_add_kid(e, parse_E()); // parse second operand
+    e->append_kid(parse_E()); // parse first operand
+    e->append_kid(parse_E()); // parse second operand
   } else {
-    std::string errmsg = cpputil::format("Illegal expression (at '%s')", node_get_str(next_terminal));
-    error_on_node(next_terminal, errmsg.c_str());
+    SyntaxError::raise(next_terminal->get_loc(), "Illegal expression (at '%s')", next_terminal->get_str().c_str());
   }
 
-  return e;
+  return e.release();
 }
 
-struct Node *Parser::expect(enum TokenKind tok_kind) {
-  struct Node *next_terminal = lexer_next(m_lexer);
-  if (!next_terminal) {
+Node *Parser::expect(enum TokenKind tok_kind) {
+  std::unique_ptr<Node> next_terminal(m_lexer->next());
+  if (next_terminal == nullptr) {
     error_at_current_pos("Unexpected end of input");
   }
-  if (node_get_tag(next_terminal) != tok_kind) {
-    std::string errmsg = cpputil::format("Unexpected token '%s'", node_get_str(next_terminal));
-    error_on_node(next_terminal, errmsg.c_str());
+  if (next_terminal->get_tag() != tok_kind) {
+    SyntaxError::raise(next_terminal->get_loc(), "Unexpected token '%s'", next_terminal->get_str().c_str());
   }
-  return next_terminal;
+  return next_terminal.release();
 }
 
-// This function translates token and parse node tags into strings
-// for parse tree printing
-const char *pfxcalc_stringify_node_tag(int tag) {
+void Parser::error_at_current_pos(const std::string &msg) {
+  SyntaxError::raise(m_lexer->get_current_loc(), "%s", msg.c_str());
+}
+
+////////////////////////////////////////////////////////////////////////
+// ParserTreePrint implementation
+////////////////////////////////////////////////////////////////////////
+
+ParserTreePrint::ParserTreePrint() {
+}
+
+ParserTreePrint::~ParserTreePrint() {
+}
+
+std::string ParserTreePrint::node_tag_to_string(int tag) const {
   switch (tag) {
   // terminal symbols:
   case TOK_IDENTIFIER:
@@ -152,32 +139,6 @@ const char *pfxcalc_stringify_node_tag(int tag) {
     return "E";
 
   default:
-    err_fatal("Unknown node tag: %d\n", tag);
-    return "<<UNKNOWN>>";
+    RuntimeError::raise("Unknown node tag: %d", tag);
   }
-}
-
-void Parser::error_at_current_pos(const std::string &msg) {
-  struct SourceInfo current_pos = lexer_get_current_pos(m_lexer);
-  error_at_pos(current_pos, msg.c_str());
-}
-
-////////////////////////////////////////////////////////////////////////
-// Parser API functions
-////////////////////////////////////////////////////////////////////////
-
-struct Parser *parser_create(struct Lexer *lexer_to_adopt) {
-  return new Parser(lexer_to_adopt);
-}
-
-void parser_destroy(struct Parser *parser) {
-  delete parser;
-}
-
-struct Node *parser_parse(struct Parser *parser) {
-  return parser->parse();
-}
-
-void parser_print_parse_tree(struct Node *root) {
-  treeprint(root, pfxcalc_stringify_node_tag);
 }

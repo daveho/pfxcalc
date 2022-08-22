@@ -1,24 +1,22 @@
 #ifndef INTERP_H
 #define INTERP_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
+#include <map>
+#include "node.h"
 
-struct Node;
-struct Interpreter;
+class Interpreter {
+private:
+  Node *m_tree;
+  std::map<std::string, long> m_vars;
 
-// create an Interpreter from given parse tree
-struct Interpreter *interp_create(struct Node *tree);
+public:
+  Interpreter(Node *tree);
+  ~Interpreter();
 
-// destroy given Interpreter
-void interp_destroy(struct Interpreter *interp);
+  long exec();
 
-// execute the Interpreter, returning the result of the last evaluation
-long interp_exec(struct Interpreter *interp);
-
-#ifdef __cplusplus
-}
-#endif // __cplusplus
+private:
+  long eval(Node *expr);
+};
 
 #endif // INTERP_H
