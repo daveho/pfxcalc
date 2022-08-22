@@ -19,10 +19,15 @@ Lexer::Lexer(FILE *in, const std::string &filename)
 }
 
 Lexer::~Lexer() {
+  if (m_next != nullptr) {
+    delete m_next;
+  }
 }
 
 Node *Lexer::next() {
   fill();
+  if (m_next == nullptr)
+    SyntaxError::raise(get_current_loc(), "Unexpected end of input");
   Node *tok = m_next;
   m_next = nullptr;
   return tok;
